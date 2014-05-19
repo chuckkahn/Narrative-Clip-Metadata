@@ -2,7 +2,7 @@
 
 use File::Find::Rule;
 
-my $path="/Users/chuckkahn/Pictures/Narrative\ Clip/2014/05/11";
+my $path="/Users/chuckkahn/Pictures/Narrative\ Clip/2014/05/02c";
 # my $path="~/Pictures/Narrative\ Clip/2014/05/01";
 # my $path="/Users/charleskahn/Pictures/Narrative\ Clip/2014/05/05";
 
@@ -10,7 +10,6 @@ my @folders = File::Find::Rule->file->in( $path );
 
 $html = "narrative_pics.html";
 open (HTML, ">$html");		# open file for output
-
 
 print HTML <<"zarp";
 <html>
@@ -68,6 +67,13 @@ print HTML "<table>\n";
 # /Users/chuckkahn/Pictures/Narrative Clip/2014/05/02/000117.jpg
 # /Users/chuckkahn/Pictures/Narrative\ Clip/2014/05/02/meta/222641.json 
 
+push ( @INC,"/usr/bin/exiftool");
+
+# enabling Exiftool user-defined XMP tags 
+
+BEGIN { $Image::ExifTool::configFile = 'Narrative_XMP.cfg' }	
+use Image::ExifTool;	
+
 foreach my $i (@folders)
 {
 	if ($i =~ /(.*)\/(\d*)(.json)/ )
@@ -88,6 +94,8 @@ foreach my $i (@folders)
 			$n2{$file} = $2;
 			$n3{$file} = $3;
 
+			$jsonpath{$file}  = $path . "/" . $file . ".json";
+			
 			$imagepath{$file} = $path . $file . ".jpg";
 			$imagepath{$file} =~  s/meta//;
 
@@ -116,8 +124,9 @@ foreach my $i (@folders)
 	}
 }
 
-@files = sort { $a <=> $b } keys %n1;
-# @files = sort { $n2{$b} <=> $n1{$a} } keys %n1;
+@files = sort { $a <=> $b } keys %n1;		# sort by file order
+
+# @files = sort { $n2{$b} <=> $n1{$a} } keys %n1;	# sort by 2nd acc_data number
 
 # exiftool -n -orientation=8 210506c.jpg
 
@@ -148,6 +157,43 @@ system "exiftool -alldates-=4 $sfile";
 system "exiftool -n -orientation=$ETrot{$file} $sfile";
 system "exiftool -model='Narrative Clip' $sfile";
 
+# use strict; 
+# use warnings;
+
+use lib qw(..);
+
+use JSON qw( );
+
+my $filename = $jsonpath{$file};
+
+print $filename . "\n\n";
+
+my $json_text = do {
+   open(my $json_fh, "<:encoding(UTF-8)", $filename)
+      or die("Can't open \$filename\": $!\n");
+   local $/;
+   <$json_fh>
+};
+
+my $json = JSON->new;
+
+print $json_text . "\n";
+
+print $json . "\n";
+
+my $decoded = $json->decode($json_text);
+
+print $decoded . "\n";
+
+print "fw_version is " . $decoded->{'fw_version'} . "\n";
+
+# write structured information as a HASH reference
+
+my $exifTool = new Image::ExifTool;
+$exifTool->SetNewValue('XMP:NarrClip' => $decoded );
+$exifTool->WriteInfo($sfile);
+
+exit;	# only doing first jpeg and quitting
 }
 
 print HTML <<"zarp";
