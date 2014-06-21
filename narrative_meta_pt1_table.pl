@@ -1,11 +1,12 @@
 # script to prepare Narrative photos with EXIF metadata 
 # for upload via Google+ Auto Backup
 
-use File::Find::Rule;
+use File::Find::Rule;	# find all the subdirectories of a given directory
 
-my $path="/Users/chuckkahn/Pictures/Narrative\ Clip/2014/05/02c";
-# my $path="~/Pictures/Narrative\ Clip/2014/05/01";
-# my $path="/Users/charleskahn/Pictures/Narrative\ Clip/2014/05/29";
+my $home = "/Users/chuckkahn/";
+# my $home = "/Users/charleskahn/";
+
+my $path= $home . "Pictures/Narrative\ Clip/2014/05/02c";
 
 my @folders = File::Find::Rule->file->in( $path );
 
@@ -59,7 +60,7 @@ img.small {height:10%; width:10%}
 </style>
 </head>
 
-<body bgcolor=#000000>
+<body bgcolor=#222222>
 zarp
 
 print HTML "$path<HR>\n\n";
@@ -76,7 +77,7 @@ use lib qw(..);
 
 use JSON qw( );		# using JSON 
 
-BEGIN { $Image::ExifTool::configFile = 'Narrative_XMP.cfg' }	
+# BEGIN { $Image::ExifTool::configFile = 'Narrative_XMP.cfg' }	
 use Image::ExifTool;	
 
 foreach my $i (@folders)			# going through the directory
@@ -100,11 +101,11 @@ foreach my $i (@folders)			# going through the directory
 		   <$json_fh>
 		};
 
-		print $json_text . "\n";
+#		print $json_text . "\n";
 
 		my $json = JSON->new;
 
-		print $json . "\n";
+#		print $json . "\n";
 
 		my $decoded = $json->decode($json_text);
 		$meta_json{$file} = $decoded;
@@ -150,53 +151,28 @@ foreach my $i (@folders)			# going through the directory
 # 6 = Rotate 90 CW 
 # 8 = Rotate 270 CW
 
+$height = "15%";
+
 foreach $file (@files)
 {
+		++$c;
 		# print table row
 		print HTML <<"zarp";
-<tr  >
-<td> <div id="div"><img  height="5%" src="$imagepath{$file}" ></div> </TD>
+<tr>
+<td> $c </td>
+<td> <div id="div"><img  height="$height" src="$imagepath{$file}" ></div> </TD>
 <TD width=20px> <A HREF="$imagepath{$file}">$file</A></td>
 <td width=20px> n1 $n1{$file}</td>
 <td width=20px> n2 $n2{$file}</td>
 <td width=20px> n3 $n3{$file}</td>
 <td width=20px> $rotate{$file} </td>
-<td height=200% >  <div id="rotate$rotate{$file}"><img height="5%" src="$imagepath{$file}"  ></div></td>
+<td height=200% >  <div id="rotate$rotate{$file}"><img height="$height" src="$imagepath{$file}"  ></div></td>
 </tr>
 zarp
 
-$sfile = $imagepath{$file};
-$sfile =~ s/ /\\ /g;
 
 print "\n";
-
-system "exiftool '-alldates<\${directory}\$filename' $sfile" || die "exif1 fail" ;		# set EXIF date by file and directory name
-system "exiftool -alldates-=4 $sfile";													# adjust for timezone (EST)
-system "exiftool -n -orientation=$ETrot{$file} $sfile";									# set orientation
-system "exiftool -model='Narrative Clip' $sfile";										# set EXIF Camera model to "Narrative Clip"
-
-# use strict; 
-# use warnings;
-
-# ------------------------------ JSON hash section ---------------------------------
-
-# write structured information as a HASH reference
-
-print "\n";
-print $meta_json{$file} . "\n";
-print "fw_version is " . $meta_json{$file}->{'fw_version'} . "\n";
-print "acc_data #1 is " . $meta_json{$file}->{'acc_data'}{'samples'}[0][1] . "\n";
-
-my $exifTool = new Image::ExifTool;
-$exifTool->SetNewValue('XMP:NarrClip:NarrMeta' => $meta_json{$file} );
-$exifTool->WriteInfo($sfile);
-
-# exit;	# only doing first jpeg and quitting
 }
-
-# ------------------------------ JSON hash section ---------------------------------
-
-
 
 print HTML <<"zarp";
 </table>
