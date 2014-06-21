@@ -1,6 +1,10 @@
-narrative_meta.pl
+narrative_meta_pt1_table.pl
 
-- This is a perl script to add EXIF metadata to jpegs from Narrative Clip camera.   
+- This is a perl script to create an .html table of Narrative Clip jpegs before and after rotation
+
+narrative_meta_pt2_date_rotate_model.pl
+
+- This is a perl script to add EXIF metadata for date, rotation (orientation) and camera model to jpegs from Narrative Clip camera
 
 narrative_exiftool.command
 
