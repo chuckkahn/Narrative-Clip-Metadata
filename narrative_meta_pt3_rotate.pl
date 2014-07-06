@@ -1,11 +1,11 @@
-# script to add EXIF metadata to Narrative Clip jpegs 
+# script to add EXIF orientation metadata to Narrative Clip jpegs 
 
 use File::Find::Rule;	# find all the subdirectories of a given directory
 
 my $home = "/Users/chuckkahn/";			# user's home directory
 # my $home = "/Users/charleskahn/";
 
-my $path= $home . "Pictures/Narrative\ Clip/2014/05/";    # path to narrative jpegs
+my $path= $home . "Pictures/Narrative\ Clip/2014/07";    # path to narrative jpegs
 
 push ( @INC,"/usr/bin/exiftool");
 
@@ -68,25 +68,25 @@ foreach my $filepath (@folders)				# going through the directory
 			# 6 = Rotate 90 CW 
 			# 8 = Rotate 270 CW
 		
-			if ( $n2{$filepath} > 800 ) 				# setting rotation values
+			if ( $n2{$filepath} > 800 ) 			# setting rotation values
 			{
 				$rotate{$filepath} = 90;
-				$ETrot{$filepath} = 6;
+				$ETrot{$filepath} = 6;				# = Rotate 90 CW 
 			}
 			elsif ( $n2{$filepath} > 140 ) 
 			{
 				$rotate{$filepath} = 180;
-				$ETrot{$filepath} = 3;
+				$ETrot{$filepath} = 3;				# = Rotate 180 
 			}
 			elsif ( $n2{$filepath} < -198 ) 
 			{
 				$rotate{$filepath} = 270;
-				$ETrot{$filepath} = 8;
+				$ETrot{$filepath} = 8;				# = Rotate 270 CW
 			}
 			elsif ( $n2{$filepath} < 60 ) 
 			{
 				$rotate{$filepath} = 0;
-				$ETrot{$filepath} = 1;
+				$ETrot{$filepath} = 1;				#  = Horizontal (normal) 
 			}
 		
 			++$c; 							# increment counter 
@@ -99,18 +99,19 @@ foreach my $filepath (@folders)				# going through the directory
 			# sending system exiftool command-line
 			# (seem inefficient and slow?)
 
-			$ifcondition = "-if 'not \$model'";		# set condition to not change if camera model is set
-		#	$ifcondition = "";
+		#	 $ifcondition = "-if 'not \$orientation'";		# set condition if orientation is not set
+			$ifcondition = "";
 
-			print "set date and shift by 4 hours (EST timezone), set rotation and camera model\n";
-			system "exiftool '-alldates<\${directory}\$filename' -execute -alldates-=4 -n -orientation=$ETrot{$filepath} -model='Narrative Clip' -common_args -overwrite_original $ifcondition $sfile" || die "exif1 fail" ;		
+			print "set orientation $ETrot{$filepath}\n";
+			system "exiftool -orientation=$ETrot{$filepath} -overwrite_original -n $ifcondition $sfile" || die "exif1 fail" ;		
+#			system "exiftool -orientation=$ETrot{$filepath} -n $ifcondition $sfile" || die "exif1 fail" ;		
 
 			# display date, camera model and orientation
-			# system "exiftool -DateTimeOriginal -model -orientation $sfile";													
+			system "exiftool -DateTimeOriginal -model -orientation $sfile";													
 
 			print "----------------------------\n\n";
 		
-			if ($c > 4000)
+			if ($c > 22222)
 			{
 				exit;
 			}

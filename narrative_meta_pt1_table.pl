@@ -6,7 +6,7 @@ use File::Find::Rule;	# find all the subdirectories of a given directory
 my $home = "/Users/chuckkahn/";
 # my $home = "/Users/charleskahn/";
 
-my $path = $home . "Pictures/Narrative\ Clip/2014/06/21";
+my $path = $home . "Pictures/Narrative\ Clip/2014/07/05";
 
 my @folders = File::Find::Rule->file->in( $path );
 
