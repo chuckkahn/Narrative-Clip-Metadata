@@ -5,7 +5,7 @@ use File::Find::Rule;	# find all the subdirectories of a given directory
 my $home = "/Users/chuckkahn/";			# user's home directory
 # my $home = "/Users/charleskahn/";
 
-my $path= $home . "Pictures/Narrative\ Clip/2014/05/";    # path to narrative jpegs
+my $path= $home . "Pictures/Narrative\ Clip/2014r/07/20/";    # path to narrative jpegs
 
 push ( @INC,"/usr/bin/exiftool");
 
@@ -48,7 +48,7 @@ foreach my $filepath (@folders)				# going through the directory
 
 		if ( $json_status == 1 )
 		{
-	#		print $json_text . "\n";
+			print $json_text . "\n";
 
 			my $json = JSON->new;
 
@@ -110,7 +110,7 @@ foreach my $filepath (@folders)				# going through the directory
 
 			print "----------------------------\n\n";
 		
-			if ($c > 4000)
+			if ($c > 4)
 			{
 				exit;
 			}

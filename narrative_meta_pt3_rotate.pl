@@ -5,7 +5,7 @@ use File::Find::Rule;	# find all the subdirectories of a given directory
 my $home = "/Users/chuckkahn/";			# user's home directory
 # my $home = "/Users/charleskahn/";
 
-my $path= $home . "Pictures/Narrative\ Clip/2014/07";    # path to narrative jpegs
+my $path= $home . "Pictures/Narrative\ Clip/2014/";    # path to narrative jpegs
 
 push ( @INC,"/usr/bin/exiftool");
 
@@ -25,7 +25,7 @@ foreach my $filepath (@folders)				# going through the directory
 		$file = $2;
 		$ext  = $3;
 
-		print $filepath . "\n";
+#		print $filepath . "\n";
 	
 		$jpegpath{$filepath}  = $filepath;
 		
@@ -48,7 +48,7 @@ foreach my $filepath (@folders)				# going through the directory
 
 		if ( $json_status == 1 )
 		{
-	#		print $json_text . "\n";
+			print $json_text . "\n";
 
 			my $json = JSON->new;
 
@@ -57,36 +57,68 @@ foreach my $filepath (@folders)				# going through the directory
 			my $decoded = $json->decode($json_text);
 			$meta_json{$filepath} = $decoded;
 
-			$n1{$filepath} = $decoded->{'acc_data'}{'samples'}[0][0];	# grabbing acc_data numbers...
-			$n2{$filepath} = $decoded->{'acc_data'}{'samples'}[0][1];
-			$n3{$filepath} = $decoded->{'acc_data'}{'samples'}[0][2];
+			$acc_x{$filepath} = $decoded->{'acc_data'}{'samples'}[0][0];	# grabbing acc_data numbers...
+			$acc_y{$filepath} = $decoded->{'acc_data'}{'samples'}[0][1];
+			$acc_z{$filepath} = $decoded->{'acc_data'}{'samples'}[0][2];
+
+			my $pi = 3.14159265358979;
+
+			sub deg_to_rad { ($_[0]/180) * $pi }
+			sub rad_to_deg { ($_[0]/$pi) * 180 }
+			sub asin { atan2($_[0], sqrt(1 - $_[0] * $_[0])) }
+			sub acos { atan2( sqrt(1 - $_[0] * $_[0]), $_[0] ) }
+			sub tan  { sin($_[0]) / cos($_[0])  }
+			sub atan { atan2($_[0],1) };
+
+			# =degrees(pi()-atan2(C2,D2))  -- formula for (y,x)
+
+			$rotate{$filepath} = rad_to_deg( $pi - atan2 ( $acc_y{$filepath}, $acc_x{$filepath} ) ) ;
+			
+			print "rotation is $rotate{$filepath}\n";
+
+			use POSIX;
+			$rotate{$filepath} = ceil ($rotate{$filepath} );     # using ceil to round
+
+			if ( $rotate{$filepath} >= 316 )
+			{
+				$rotate{$filepath} = $rotate{$filepath} - 360;
+			}
 
 			# exiftool -n -orientation=8 210506c.jpg
 
-			# 1 = Horizontal (normal) 
+			# 1 = Horizontal (normal) 0
 			# 3 = Rotate 180 
 			# 6 = Rotate 90 CW 
 			# 8 = Rotate 270 CW
 		
-			if ( $n2{$filepath} > 800 ) 			# setting rotation values
-			{
-				$rotate{$filepath} = 90;
-				$ETrot{$filepath} = 6;				# = Rotate 90 CW 
+			# setting rotation values
+		
+			# 0, 90, 180, 270
+		
+			if ( $rotate{$filepath} ~~ [46..135] ) 			# > 800	
+			{										# ------------- Rotate 90 CW
+				$ETrot{$filepath} = 6;  
+				$rounded{$filepath} = 90;
 			}
-			elsif ( $n2{$filepath} > 140 ) 
-			{
-				$rotate{$filepath} = 180;
-				$ETrot{$filepath} = 3;				# = Rotate 180 
+			elsif ( $rotate{$filepath} ~~ [136..225] ) 			# > 250  < 800
+			{										# ------------- Rotate 180 CW
+				$ETrot{$filepath} = 3; 
+				$rounded{$filepath} = 180;
 			}
-			elsif ( $n2{$filepath} < -198 ) 
-			{
-				$rotate{$filepath} = 270;
-				$ETrot{$filepath} = 8;				# = Rotate 270 CW
+			elsif ( $rotate{$filepath} ~~ [-45..45] ) 		# > -611 < 249
+			{										# ------------- Rotate 0   CW
+				$ETrot{$filepath} = 1;
+				$rounded{$filepath} = 0;
 			}
-			elsif ( $n2{$filepath} < 60 ) 
+			elsif ( $rotate{$filepath} ~~ [226..315] ) 		# < -611
+			{										# ------------- Rotate 270 CW
+				$ETrot{$filepath} = 8;
+				$rounded{$filepath} = 270;
+			}
+			else
 			{
-				$rotate{$filepath} = 0;
-				$ETrot{$filepath} = 1;				#  = Horizontal (normal) 
+				print "$rotate{$filepath} doesn't fit!!!\n\n";
+				exit;
 			}
 		
 			++$c; 							# increment counter 
@@ -94,7 +126,7 @@ foreach my $filepath (@folders)				# going through the directory
 			$sfile = $jpegpath{$filepath};
 			$sfile =~ s/ /\\ /g;				# changing spaces in jpeg path to "\ " for command line usage
 
-			print "$sfile [space-d file]\n";
+			# print "$sfile [space-d file]\n";
 
 			# sending system exiftool command-line
 			# (seem inefficient and slow?)
@@ -103,15 +135,16 @@ foreach my $filepath (@folders)				# going through the directory
 			$ifcondition = "";
 
 			print "set orientation $ETrot{$filepath}\n";
-			system "exiftool -orientation=$ETrot{$filepath} -overwrite_original -n $ifcondition $sfile" || die "exif1 fail" ;		
-#			system "exiftool -orientation=$ETrot{$filepath} -n $ifcondition $sfile" || die "exif1 fail" ;		
+
+#			system "exiftool -orientation= -progress -overwrite_original -n $ifcondition $sfile" || die "exif1 fail" ;				# wipe orientation
+			system "exiftool -orientation=$ETrot{$filepath} -overwrite_original -n $ifcondition $sfile" || die "exif1 fail" ;		# set orientation
 
 			# display date, camera model and orientation
 			system "exiftool -DateTimeOriginal -model -orientation $sfile";													
 
 			print "----------------------------\n\n";
 		
-			if ($c > 22222)
+			if ($c > 33333)
 			{
 				exit;
 			}
