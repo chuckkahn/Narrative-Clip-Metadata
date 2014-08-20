@@ -2,10 +2,9 @@
 
 use File::Find::Rule;	# find all the subdirectories of a given directory
 
-my $home = "/Users/chuckkahn/";			# user's home directory
-# my $home = "/Users/charleskahn/";
+my $home =  "$ENV{HOME}";
 
-my $path= $home . "Pictures/Narrative\ Clip/2014/";    # path to narrative jpegs
+my $path= $home . "/Pictures/Narrative\ Clip/2014/";    # path to narrative jpegs
 
 push ( @INC,"/usr/bin/exiftool");
 
@@ -161,14 +160,31 @@ foreach my $filepath (@folders)				# going through the directory
 			$rsnapfile =~ s/2014/2014r/;
 
 			use File::Copy;
+			use File::Path;
+			use File::Basename;
 			
-			move ($jpegpath{$filepath}, $rjpegfile);
-			move ($jsonpath{$filepath}, $rjsonfile);
-			move ($snapfile, $rsnapfile);				
+			($mfilename, $mdirs, $msuffix) = fileparse($rjsonfile);
+			($jfilename, $jdirs, $jsuffix) = fileparse($rjpegfile);
+			
+			if (! -d $mdirs)
+			{
+			  my $dirs = eval { mkpath($mdirs) };
+			  die "Failed to create $mdirs: $@\n" unless $dirs;
+			}
+
+			if (! -d $jdirs)
+			{
+			  my $dirs = eval { mkpath($jdirs) };
+			  die "Failed to create $jdirs: $@\n" unless $dirs;
+			}
+			
+			move ($jpegpath{$filepath}, $rjpegfile) || die "exif1 fail [$!] \n[$jpegpath{$filepath}]\n[$rjpegfile]\n" ;	
+			move ($jsonpath{$filepath}, $rjsonfile) || die "exif1 fail [$!] \n[$jsonpath{$filepath}]\n[$rjsonfile]";
+			move ($snapfile, $rsnapfile) 			|| die "exif1 fail [$!] \n[$snapfile]\n[$rsnapfile]\n";	
 
 			print "----------------------------\n\n";
 		
-			if ($c > 111112)
+			if ($c > 33333)
 			{
 				exit;
 			}
